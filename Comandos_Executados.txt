@@ -52,17 +52,130 @@ CREATE TABLE PARCELA_FINAN (
 
 
 
+
+/************************************************************************************
+***     					CRIA DAS SEQUENCIAS
+*************************************************************************************/
+CREATE SEQUENCE cliente_finan_seq
+ START WITH     1
+ INCREMENT BY   1
+ NOCACHE
+ NOCYCLE;
+ 
+ CREATE SEQUENCE emprestimo_finan_seq
+ START WITH     1
+ INCREMENT BY   1
+ NOCACHE
+ NOCYCLE;
+ 
+ CREATE SEQUENCE taxas_seq
+ START WITH     1
+ INCREMENT BY   1
+ NOCACHE
+ NOCYCLE;
+
+/************************************************************************************
+***     					ALTERAR A TABELA TAXA_DIA
+*************************************************************************************/
+ 
+ /* Exclui a referencia da chave primária na tabela EMPRESTIMO_FINAN */
+ ALTER TABLE EMPRESTIMO_FINAN
+ DROP CONSTRAINT EMPRESTIMO_FINAN_IDTAXAS_FK;
+ 
+ /* exclui a chave primaria da tabela, para utilizar novo campos */
+ ALTER TABLE TAXAS_DIA
+ DROP CONSTRAINT TAXASDIA_PK;
+ 
+ /* Apaga a coluna utilizada anteriormente para chave primária */
+ ALTER TABLE TAXAS_DIA
+ DROP COLUMN IDTAXAS;
+
+ /* adiciona novo campo */
+ ALTER TABLE TAXAS_DIA
+ ADD IDTAXAS_AUTO  NUMBER(4) NOT NULL;
+ 
+ /* cria nova chave primária utilizando novo campo */
+ ALTER TABLE TAXAS_DIA
+ ADD CONSTRAINT TAXASDIA_PK PRIMARY KEY (IDTAXAS_AUTO, DTTAXA) ;
+ 
+ /* Altera tabela EMPRESTIMO_FINAN para utilizar como chave estrangeeira o novo campo primary key */
+ ALTER TABLE EMPRESTIMO_FINAN
+ ADD CONSTRAINT EMPRESTIMO_FINAN_IDTAXAS_FK FOREIGN KEY (IDTAXAS, DTTAXA) REFERENCES TAXAS_DIA(IDTAXAS_AUTO, DTTAXA);
+ 
+ 
+
 /************************************************************************************
 ***     					INSERÇÕES NAS TABELAS
 *************************************************************************************/
+
 /* Insere dados nas tabelas */
+
+INSERT INTO TAXAS (
+	IDTAXAS,
+	DESCRICAO)
+	VALUES (
+	taxas_seq.nextval,
+	'Esfola cliente'
+	);
+	
+INSERT INTO TAXAS (
+	IDTAXAS,
+	DESCRICAO)
+	VALUES (
+	taxas_seq.nextval,
+	'Ótimo lucro'
+	);
+	
+INSERT INTO TAXAS_DIA (
+	IDTAXAS_AUTO,
+	DTTAXA,
+	VLRTAXA )
+	VALUES (
+	1,
+	'05-04-2017',
+	3.99
+	);
+	
+INSERT INTO TAXAS_DIA (
+	IDTAXAS_AUTO,
+	DTTAXA,
+	VLRTAXA )
+	VALUES (
+	1,
+	'07-04-2017',
+	3.58
+	);
+	
+INSERT INTO TAXAS_DIA (
+	IDTAXAS_AUTO,
+	DTTAXA,
+	VLRTAXA )
+	VALUES (
+	2,
+	'18-04-2017',
+	2.99
+	);
+	
+INSERT INTO TAXAS_DIA (
+	IDTAXAS_AUTO,
+	DTTAXA,
+	VLRTAXA )
+	VALUES (
+	2,
+	'19-04-2017',
+	8.76
+	);
+
+
+
+
 INSERT INTO CLIENTE_FINAN (
 	NUMCONTA,
 	NOME_CLI,
 	DTNASC,
 	E_MAIL)
 	VALUES (
-	1,
+	cliente_finan_seq.nextval,
 	'Tiago',
 	'06-04-1982',
 	'tiago@econtabil.com'
@@ -74,39 +187,13 @@ INSERT INTO CLIENTE_FINAN (
 	DTNASC,
 	E_MAIL)
 	VALUES (
-	2,
+	cliente_finan_seq.nextval,
 	'Cliente Teste da Silva',
 	'15-09-1998',
 	'cliente@dasilva.org'
 	);
 
-INSERT INTO TAXAS (
-	IDTAXAS,
-	DESCRICAO)
-	VALUES (
-	1,
-	'Esfola cliente'
-	);
-	
-INSERT INTO TAXAS_DIA (
-	IDTAXAS,
-	DTTAXA,
-	VLRTAXA )
-	VALUES (
-	1,
-	'05-04-2017',
-	3.99
-	);
-	
-INSERT INTO TAXAS_DIA (
-	IDTAXAS,
-	DTTAXA,
-	VLRTAXA )
-	VALUES (
-	1,
-	'07-04-2017',
-	3.58
-	);
+
 	
 INSERT INTO EMPRESTIMO_FINAN (
 	IDEMPRESTIMO,
@@ -119,7 +206,7 @@ INSERT INTO EMPRESTIMO_FINAN (
 	NUMPARCELAS
 	)
 	VALUES (
-	1,
+	emprestimo_finan_seq.nextval,
 	1,
 	'05-04-2017',
 	1,
@@ -160,3 +247,61 @@ INSERT INTO PARCELA_FINAN (
 	NULL,
 	NULL
 	);
+	
+/* insere segundo financiamento com 2 parcelas */
+INSERT INTO EMPRESTIMO_FINAN (
+	IDEMPRESTIMO,
+	IDTAXAS,
+	DTTAXA,
+	NUMCONTA,
+	DTEMPREST,
+	DTVENC,
+	VLRTOTAL,
+	NUMPARCELAS
+	)
+	VALUES (
+	emprestimo_finan_seq.nextval,
+	1,
+	'05-04-2017',
+	1,
+	'05-04-2017',
+	'31-12-2017',
+	1200.98,
+	12
+	);
+	
+INSERT INTO PARCELA_FINAN (
+	IDPARCELA,
+	IDEMPRESTIMO,
+	DTPARCELA,
+	VLRPARCELA,
+	DTPAGTO,
+	MULTA)
+	VALUES (
+	1,
+	2,
+	'10-05-2017',
+	100.08,
+	'09-05-2017',
+	NULL
+	);
+	
+INSERT INTO PARCELA_FINAN (
+	IDPARCELA,
+	IDEMPRESTIMO,
+	DTPARCELA,
+	VLRPARCELA,
+	DTPAGTO,
+	MULTA)
+	VALUES (
+	2,
+	2,
+	'10-06-2017',
+	100.08,
+	NULL,
+	NULL
+	);
+	
+	
+	/* * alterar uma das parcelas incluindo valor para multa de 10% do valor da parcela  /
+UPDATE PARCELA_FINAN SET MULTA = VLRPARCELA*0.10 WHERE IDPARCELA=2 AND IDEMPRESTIMO=1;
